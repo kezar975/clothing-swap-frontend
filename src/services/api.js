@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-
-
 const API_BASE = 'https://clothing-swap-marketplace.onrender.com/api';
+
 
 
 const api = axios.create({
