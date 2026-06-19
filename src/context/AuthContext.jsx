@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      authAPI.me()  
+      authAPI.me()
         .then(res => setUser(res.data))
         .catch(() => {
           localStorage.removeItem('token');
@@ -23,19 +23,27 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await authAPI.login(email, password); 
-    localStorage.setItem('token', res.data.token);
-    setToken(res.data.token);
-    setUser(res.data.user);
-    return res.data;
+    try {
+      const res = await authAPI.login(email, password); 
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    } catch (err) {
+      throw err; 
+    }
   };
 
   const register = async (userData) => {
-    const res = await authAPI.register(userData); 
-    localStorage.setItem('token', res.data.token);
-    setToken(res.data.token);
-    setUser(res.data.user);
-    return res.data;
+    try {
+      const res = await authAPI.register(userData); 
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    } catch (err) {
+      throw err;
+    }
   };
 
   const logout = () => {
