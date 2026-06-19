@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { clothingAPI } from '../services/api';
 import { Container, Row, Col, Card, Spinner, Form, Alert } from 'react-bootstrap';
 
-const API_BASE = 'https://clothing-swap-marketplace.onrender.com/api';
-
+const API_BASE = 'https://clothing-swap-backend.onrender.com/api'; 
 export default function Listings() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +41,10 @@ export default function Listings() {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return 'https://via.placeholder.com/300x200?text=No+Image';
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${API_BASE}${imagePath}`;
-  };
+  if (!imagePath) return 'https://via.placeholder.com/300x200?text=No+Image';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `https://clothing-swap-backend.onrender.com${imagePath}`; 
+};
 
   return (
     <Container>
