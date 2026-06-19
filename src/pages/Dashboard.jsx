@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { clothingAPI } from '../services/api';
 import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
-import axios from 'axios';
-
-const API_BASE = 'https://clothing-swap-marketplace.onrender.com/api';
+import api from '../services/api';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -59,12 +57,9 @@ export default function Dashboard() {
       }
 
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE}/api/clothes`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await api.post('/clothes', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
 
       setMsg({ type: 'success', text: 'Item listed successfully!' });
       setShowAdd(false);

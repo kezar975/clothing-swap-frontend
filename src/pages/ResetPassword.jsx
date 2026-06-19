@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
-import axios from 'axios';
+import { authAPI } from '../services/api';
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -17,7 +17,7 @@ export default function ResetPassword() {
     if (password.length < 6) return setMsg('Min 6 characters required');
 
     try {
-      await axios.post(`/api/auth/reset-password/${token}`, { password });
+      await authAPI.resetPassword(token, password);
       setMsg('Password reset successful! Redirecting...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
