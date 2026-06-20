@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { swapAPI } from '../services/api';
-import { Container, Card, Row, Col, Button, Badge, Alert, Spinner } from 'react-bootstrap';
+import { useAuth } from '../context/AuthContext';
+import { Container, Card, Col, Row, Button, Badge, Alert, Spinner } from 'react-bootstrap';
 
 export default function SwapRequests() {
   const [swaps, setSwaps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState({ type: '', text: '' });
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetch = async () => {
@@ -16,7 +18,7 @@ export default function SwapRequests() {
         const res = await swapAPI.getAll();
         setSwaps(res.data || []);
       } catch {
-        setMsg('Failed to load swaps');
+        setMsg({ type: 'danger', text: 'Failed to load swaps' });
       } finally {
         setLoading(false);
       }
@@ -27,28 +29,41 @@ export default function SwapRequests() {
   const handleAction = async (id, status) => {
     try {
       await swapAPI.updateStatus(id, status);
-      setMsg(`Swap ${status.toLowerCase()} successfully`);
-      const res = await swapAPI.getAll();
-      setSwaps(res.data || []);
-    } catch {
-      setMsg('Action failed');
+      
+      
+      setSwaps(prev => prev.map(s => 
+        s._id === id ? { ...s, status } : s
+      ));
+
+      if (status === 'Accepted') {
+        setMsg({ type: 'success', text: '✅ Swap accepted! Now you can chat.' });
+      } else if (status === 'Rejected') {
+        setMsg({ type: 'warning', text: '❌ Swap rejected.' });
+      } else if (status === 'Completed') {
+        setMsg({ type: 'success', text: '🎉 Swap completed!' });
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'Action failed';
+      setMsg({ type: 'danger', text: errMsg });
     }
   };
 
-  if (loading) {
-    return (
-      <Container className="text-center mt-5">
-        <Spinner animation="border" />
-        <p className="mt-2 text-muted">Loading swaps...</p>
-      </Container>
-    );
-  }
+  if (loading) return (
+    <Container className="text-center mt-5">
+      <Spinner animation="border" />
+      <p className="mt-2 text-muted">Loading swaps...</p>
+    </Container>
+  );
 
   return (
     <Container>
       <h3 className="mb-4">My Swap Requests</h3>
-      {msg && <Alert variant={msg.includes('failed') ? 'danger' : 'success'}>{msg}</Alert>}
-      
+      {msg.text && (
+        <Alert variant={msg.type} dismissible onClose={() => setMsg({ type: '', text: '' })}>
+          {msg.text}
+        </Alert>
+      )}
+
       {swaps.length === 0 ? (
         <p className="text-center text-muted">No swap requests yet.</p>
       ) : (
@@ -59,13 +74,17 @@ export default function SwapRequests() {
             const sender = s.sender || { name: 'Unknown' };
             const receiver = s.receiver || { name: 'Unknown' };
 
+           
+            const isReceiver = user?._id === receiver?._id;
+            const isSender = user?._id === sender?._id;
+
             return (
-              <Col key={s._id}>
+              <Col key={s._id} xs={12}>
                 <Card className="p-3">
                   <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                     <Badge bg={
-                      s.status === 'Pending' ? 'warning' : 
-                      s.status === 'Accepted' ? 'success' : 
+                      s.status === 'Pending' ? 'warning' :
+                      s.status === 'Accepted' ? 'success' :
                       s.status === 'Completed' ? 'info' : 'secondary'
                     }>
                       {s.status || 'Unknown'}
@@ -74,50 +93,65 @@ export default function SwapRequests() {
                       {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : 'N/A'}
                     </small>
                   </div>
-                  
+
                   <p className="mb-2">
-                    <strong>Item 1:</strong> {item1.title} (₹{item1.estimatedValue}) ↔ 
+                    <strong>Item 1:</strong> {item1.title} (₹{item1.estimatedValue}) ↔
                     <strong> Item 2:</strong> {item2.title} (₹{item2.estimatedValue})
                   </p>
-                  
-                  <p className="mb-3 text-muted small">
-                    Owner: {sender.name} ↔ {receiver.name}
+
+                  <p className="mb-2 text-muted small">
+                    {isSender ? '📤 You sent this request' : '📥 You received this request'}
                   </p>
+
+                  <p className="mb-3 text-muted small">
+                    {sender.name} ↔ {receiver.name}
+                  </p>
+
+                 
+                  {s.status === 'Rejected' && (
+                    <Alert variant="danger" className="mb-0 small py-2">
+                      {isSender 
+                        ? '❌ Your swap request was rejected.' 
+                        : '❌ You rejected this swap request.'}
+                    </Alert>
+                  )}
+
                   
-                  <div className="d-flex gap-2 flex-wrap">
-                    {s.status === 'Pending' && (
-                      <>
-                        <Button size="sm" variant="success" onClick={() => handleAction(s._id, 'Accepted')}>
-                          Accept
-                        </Button>
-                        <Button size="sm" variant="danger" onClick={() => handleAction(s._id, 'Rejected')}>
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                    
-                    {s.status === 'Accepted' && (
-                      <>
-                        <Button size="sm" variant="primary" onClick={() => navigate(`/chat/${s._id}`)}>
-                          Open Chat
-                        </Button>
-                        <Button size="sm" variant="success" onClick={() => handleAction(s._id, 'Completed')}>
-                          Mark Completed
-                        </Button>
-                        <Link to={`/courier/${s._id}`} className="btn btn-sm btn-info">
-                          Courier
-                        </Link>
-                      </>
-                    )}
-                    
-                    {s.status === 'Completed' && (
-                      <Badge bg="success">Completed</Badge>
-                    )}
-                    
-                    {s.status === 'Rejected' && (
-                      <Badge bg="secondary">Rejected</Badge>
-                    )}
-                  </div>
+                  {s.status === 'Pending' && (
+                    <div className="d-flex gap-2 flex-wrap">
+                      {isReceiver ? (
+                        <>
+                          <Button size="sm" variant="success" onClick={() => handleAction(s._id, 'Accepted')}>
+                            ✅ Accept
+                          </Button>
+                          <Button size="sm" variant="danger" onClick={() => handleAction(s._id, 'Rejected')}>
+                            ❌ Reject
+                          </Button>
+                        </>
+                      ) : (
+                        <Badge bg="warning" text="dark">⏳ Waiting for response...</Badge>
+                      )}
+                    </div>
+                  )}
+
+                
+                  {s.status === 'Accepted' && (
+                    <div className="d-flex gap-2 flex-wrap">
+                      <Button size="sm" variant="primary" onClick={() => navigate(`/chat/${s._id}`)}>
+                        💬 Open Chat
+                      </Button>
+                      <Button size="sm" variant="success" onClick={() => handleAction(s._id, 'Completed')}>
+                        ✅ Mark Completed
+                      </Button>
+                      <Link to={`/courier/${s._id}`} className="btn btn-sm btn-info">
+                        📦 Courier
+                      </Link>
+                    </div>
+                  )}
+
+                  {s.status === 'Completed' && (
+                    <Badge bg="success">🎉 Completed</Badge>
+                  )}
                 </Card>
               </Col>
             );
