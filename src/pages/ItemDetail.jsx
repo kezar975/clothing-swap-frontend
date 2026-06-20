@@ -51,7 +51,7 @@ export default function ItemDetail() {
         : '⚠️ Value difference is large, but request sent anyway.';
       setMsg({ type: res.data.isFair ? 'success' : 'warning', text: fairnessMsg });
       setShowModal(false);
-      setTimeout(() => navigate('/swaps'), 2000); 
+      setTimeout(() => navigate('/swap-requests'), 2000); 
     } catch (err) {
       setMsg({ type: 'danger', text: err.response?.data?.message || 'Failed to send request' });
     }
