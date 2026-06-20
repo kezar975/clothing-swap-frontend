@@ -4,6 +4,8 @@ import { clothingAPI } from '../services/api';
 import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import api from '../services/api';
 
+const API_BASE = 'https://clothing-swap-backend.onrender.com';
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
@@ -130,10 +132,7 @@ export default function Dashboard() {
             <Card className="h-100">
               <Card.Img 
                 variant="top" 
-                src={item.images?.[0] 
-                  ? (item.images[0].startsWith('http') ? item.images[0] : `${API_BASE}${item.images[0]}`)
-                  : 'https://via.placeholder.com/300x150?text=No+Image'
-                } 
+                src={item.images?.[0]?.startsWith('http') ? item.images[0] : `https://clothing-swap-backend.onrender.com${item.images[0]}`}
                 style={{ height: '150px', objectFit: 'cover' }} 
               />
               <Card.Body>

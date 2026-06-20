@@ -4,6 +4,7 @@ import { clothingAPI } from '../services/api';
 import { Container, Row, Col, Card, Spinner, Form, Alert } from 'react-bootstrap';
 
 const API_BASE = 'https://clothing-swap-backend.onrender.com/api'; 
+
 export default function Listings() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
