@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { clothingAPI, swapAPI } from '../services/api';
 import { Container, Card, Row, Col, Button, Alert, Modal, Form } from 'react-bootstrap';
 
-const API_BASE = 'https://clothing-swap-marketplace.onrender.com/api';
+const API_BASE = 'https://clothing-swap-backend.onrender.com'; 
 
 const PLACEHOLDER_IMAGE = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='400' viewBox='0 0 500 400'%3E%3Crect fill='%23e9ecef' width='500' height='400'/%3E%3Ctext fill='%236c757d' font-family='Arial, sans-serif' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image Available%3C/text%3E%3C/svg%3E`;
 
@@ -24,7 +24,6 @@ export default function ItemDetail() {
       try {
         const res = await clothingAPI.getById(id);
         setItem(res.data.clothing || res.data);
-
         if (user) {
           const mine = await clothingAPI.getAll({ status: 'Available' });
           setMyItems(mine.data.clothes.filter(i => i.owner?._id === user._id));
@@ -32,32 +31,36 @@ export default function ItemDetail() {
       } catch (err) {
         console.error('Fetch Error:', err);
         setMsg({ type: 'danger', text: 'Item not found' });
+      } finally { 
+        setLoading(false); 
       }
-      finally { setLoading(false); }
     };
     fetch();
   }, [id, user]);
 
   const handleSwap = async () => {
     if (!selectedItemId) return setMsg({ type: 'warning', text: 'Select your item to exchange' });
-
     try {
       const res = await swapAPI.create({
         receiverId: item.owner._id,
         item1Id: selectedItemId,
         item2Id: id
       });
-
       const fairnessMsg = res.data.isFair
-        ? 'Fair Swap! Request sent.'
-        : 'Value difference is large, but request sent anyway.';
-
+        ? '✅ Fair Swap! Request sent successfully.'
+        : '⚠️ Value difference is large, but request sent anyway.';
       setMsg({ type: res.data.isFair ? 'success' : 'warning', text: fairnessMsg });
       setShowModal(false);
-
+      setTimeout(() => navigate('/swaps'), 2000); 
     } catch (err) {
       setMsg({ type: 'danger', text: err.response?.data?.message || 'Failed to send request' });
     }
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return PLACEHOLDER_IMAGE;
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${API_BASE}${imagePath}`; 
   };
 
   if (loading) return (
@@ -71,111 +74,51 @@ export default function ItemDetail() {
 
   if (!item) return (
     <Container className="mt-5">
-      <Alert variant="danger" className="text-center">
-        {msg.text || 'Item not found'}
-      </Alert>
+      <Alert variant="danger" className="text-center">{msg.text || 'Item not found'}</Alert>
       <div className="text-center">
-        <Button variant="primary" onClick={() => navigate('/listings')}>
-          Back to Listings
-        </Button>
+        <Button variant="primary" onClick={() => navigate('/listings')}>Back to Listings</Button>
       </div>
     </Container>
   );
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return PLACEHOLDER_IMAGE;
-    if (imagePath.startsWith('http')) return imagePath;
-    return `${API_BASE}${imagePath}`;
-  };
-
   return (
     <Container className="mt-4">
       {msg.text && <Alert variant={msg.type} dismissible onClose={() => setMsg({})}>{msg.text}</Alert>}
-
       <Card className="shadow-sm">
         <Row className="g-0">
           <Col md={5}>
-            <div style={{
-              height: '100%',
-              minHeight: '400px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '12px 0 0 12px',
-              overflow: 'hidden'
-            }}>
+            <div style={{ height: '100%', minHeight: '400px', backgroundColor: '#f8f9fa', borderRadius: '12px 0 0 12px', overflow: 'hidden' }}>
               <Card.Img
                 src={getImageUrl(item.images?.[0])}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center'
-                }}
-                onError={(e) => {
-                  e.target.src = PLACEHOLDER_IMAGE;
-                }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
               />
             </div>
           </Col>
           <Col md={7}>
             <Card.Body className="p-4 p-md-5">
               <h2 className="mb-3">{item.title || 'Untitled Item'}</h2>
-
-              <div className="mb-3">
-                <p className="text-muted mb-2">
-                  {item.brand && <span className="me-2">{item.brand} •</span>}
-                  <span className="me-2">{item.size}</span>
-                  <span>• {item.condition}</span>
-                </p>
-
-                <h3 className="text-primary mb-3">₹{item.estimatedValue || 'N/A'}</h3>
-              </div>
-
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Description:</h6>
-                <p className="text-secondary">{item.description || 'No description provided.'}</p>
-              </div>
-
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Location:</h6>
-                <p className="mb-0">
-                  {item.location?.city || 'N/A'}
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <h6 className="text-muted mb-2">Owner:</h6>
-                <p className="mb-0">
-                  {item.owner?.name || 'Anonymous'}
-                  {item.owner?.location?.city && (
-                    <span className="text-muted ms-2">
-                      ({item.owner.location.city})
-                    </span>
-                  )}
-                </p>
-              </div>
-
+              <p className="text-muted mb-2">
+                {item.brand && <span className="me-2">{item.brand} •</span>}
+                <span className="me-2">{item.size}</span>
+                <span>• {item.condition}</span>
+              </p>
+              <h3 className="text-primary mb-3">₹{item.estimatedValue || 'N/A'}</h3>
+              <h6 className="text-muted mb-2">Description:</h6>
+              <p className="text-secondary">{item.description || 'No description provided.'}</p>
+              <h6 className="text-muted mb-2">Location:</h6>
+              <p>{item.location?.city || 'N/A'}</p>
+              <h6 className="text-muted mb-2">Owner:</h6>
+              <p>{item.owner?.name || 'Anonymous'} {item.owner?.location?.city && `(${item.owner.location.city})`}</p>
               <hr className="my-4" />
-
               {user && user._id !== item.owner?._id ? (
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => setShowModal(true)}
-                  className="w-100"
-                >
+                <Button variant="primary" size="lg" onClick={() => setShowModal(true)} className="w-100">
                   Send Swap Request
                 </Button>
               ) : user?._id === item.owner?._id ? (
-                <Alert variant="info" className="mb-0">
-                  This is your own item. You cannot swap with yourself.
-                </Alert>
+                <Alert variant="info" className="mb-0">This is your own item. You cannot swap with yourself.</Alert>
               ) : (
-                <Button
-                  variant="outline-primary"
-                  size="lg"
-                  onClick={() => navigate('/login')}
-                  className="w-100"
-                >
+                <Button variant="outline-primary" size="lg" onClick={() => navigate('/login')} className="w-100">
                   🔐 Login to Swap
                 </Button>
               )}
@@ -192,26 +135,15 @@ export default function ItemDetail() {
           <p className="text-muted mb-3">
             Choose one of your available items to swap with <strong>"{item.title}"</strong>
           </p>
-
           {myItems.length === 0 ? (
             <Alert variant="warning">
               You don't have any available items to swap.
-              <Button
-                variant="link"
-                className="ms-1 p-0"
-                onClick={() => navigate('/dashboard')}
-              >
-                List an item
-              </Button>
-              first.
+              <Button variant="link" className="ms-1 p-0" onClick={() => navigate('/dashboard')}>List an item</Button> first.
             </Alert>
           ) : (
             <Form.Group>
               <Form.Label>Select your item:</Form.Label>
-              <Form.Select
-                onChange={e => setSelectedItemId(e.target.value)}
-                value={selectedItemId}
-              >
+              <Form.Select onChange={e => setSelectedItemId(e.target.value)} value={selectedItemId}>
                 <option value="">Choose an item...</option>
                 {myItems.map(i => (
                   <option key={i._id} value={i._id}>
@@ -222,23 +154,23 @@ export default function ItemDetail() {
             </Form.Group>
           )}
 
-          {selectedItemId && (
-            <Alert variant="info" className="mt-3 mb-0 small">
-              Backend will verify fairness before processing.
-            </Alert>
-          )}
+         
+          {selectedItemId && (() => {
+            const selectedItem = myItems.find(i => i._id === selectedItemId);
+            const diff = Math.abs((selectedItem?.estimatedValue || 0) - (item.estimatedValue || 0));
+            const isFair = diff <= 500;
+            return (
+              <Alert variant={isFair ? 'success' : 'warning'} className="mt-3 mb-0 small">
+                {isFair
+                  ? '✅ Fair swap! Value difference is within ₹500.'
+                  : `⚠️ Value difference is ₹${diff} — swap may be unfair.`}
+              </Alert>
+            );
+          })()}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSwap}
-            disabled={!selectedItemId}
-          >
-            Send Request
-          </Button>
+          <Button variant="outline-secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+          <Button variant="primary" onClick={handleSwap} disabled={!selectedItemId}>Send Request</Button>
         </Modal.Footer>
       </Modal>
     </Container>
