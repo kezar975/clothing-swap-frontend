@@ -15,12 +15,11 @@ import CommunityStats from './pages/CommunityStats';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Welcome from './pages/Welcome';
+
 const Protected = ({ children }) => {
   const { user, loading } = useAuth();
-
   if (loading) return <div className="text-center mt-5">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
-
   return children;
 };
 
@@ -39,15 +38,20 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-          <Route path="/" element={<Navigate to="/listings" replace />} />
-
-
           <Route path="/dashboard" element={
             <Protected><Dashboard /></Protected>
           } />
+          
+         
+          <Route path="/swaps" element={
+            <Protected><SwapRequests /></Protected>
+          } />
+          
+          
           <Route path="/swap-requests" element={
             <Protected><SwapRequests /></Protected>
           } />
+          
           <Route path="/chat/:swapId" element={
             <Protected><Chat /></Protected>
           } />

@@ -13,21 +13,21 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation(); 
+    e.stopPropagation();
     setError('');
     setLoading(true);
-    
+
     try {
       await login(email, password);
-      navigate('/dashboard');
+
+      setTimeout(() => navigate('/dashboard'), 100);
     } catch (err) {
-    
-      const msg = err.response?.data?.message || 
-                  err.response?.data?.errors?.[0]?.msg ||
-                  err.message || 
-                  'Login failed';
+      const msg = err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        err.message ||
+        'Login failed - Check email and password';
       setError(msg);
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -35,15 +35,15 @@ export default function Login() {
     <Container className="mt-5" style={{ maxWidth: '400px' }}>
       <Card className="p-4">
         <h3 className="text-center mb-4">Login</h3>
-        
-        
+
+
         {error && (
           <Alert variant="danger" dismissible onClose={() => setError('')}>
             {error}
           </Alert>
         )}
-        
-        
+
+
         <Form>
           <Form.Group className="mb-3">
             <Form.Label>Email</Form.Label>
@@ -65,17 +65,17 @@ export default function Login() {
               disabled={loading}
             />
           </Form.Group>
-          
-         
-          <Button 
-            className="w-100" 
+
+
+          <Button
+            className="w-100"
             disabled={loading}
             onClick={handleSubmit}
           >
             {loading ? 'Logging in...' : 'Login'}
           </Button>
         </Form>
-        
+
         <p className="text-center mt-3">
           <Link to="/forgot-password">Forgot Password?</Link>
         </p>
