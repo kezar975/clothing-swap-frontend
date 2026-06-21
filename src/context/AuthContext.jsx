@@ -9,34 +9,45 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      authAPI.me()
-        .then(res => setUser(res.data))
-        .catch(() => {
-          localStorage.removeItem('token');
-          setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    const verifyToken = async () => {
+      const savedToken = localStorage.getItem('token');
+      if (!savedToken) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await authAPI.me();
+        console.log('✅ Me API response:', res.data); // Debug
+        setUser(res.data);
+      } catch (err) {
+        console.error('❌ Me API failed:', err.response?.status, err.response?.data); // Debug
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    verifyToken();
   }, [token]);
 
   const login = async (email, password) => {
-  try {
-    const res = await authAPI.login(email, password);
-    localStorage.setItem('token', res.data.token);
-    setToken(res.data.token);
-    setUser(res.data.user);
-    return res.data;
-  } catch (err) {
-    throw err;
-  }
-};
+    try {
+      const res = await authAPI.login(email, password);
+      console.log('✅ Login response:', res.data); // Debug
+      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    } catch (err) {
+      console.error('❌ Login failed:', err.response?.data); // Debug
+      throw err;
+    }
+  };
 
   const register = async (userData) => {
     try {
-      const res = await authAPI.register(userData); 
+      const res = await authAPI.register(userData);
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
