@@ -18,7 +18,7 @@ export default function CommunityStats() {
           statsAPI.getPlatformStats(),
           statsAPI.getLeaderboard()
         ]);
-        
+
         if (myRes) setMyStats(myRes.data.stats);
         setPlatformStats(platformRes.data.stats);
         setLeaderboard(leaderboardRes.data.leaderboard);
@@ -35,8 +35,8 @@ export default function CommunityStats() {
   return (
     <Container className="mt-4">
       <h2 className="mb-4"> Sustainable Fashion Community</h2>
-      
-      {/* Platform-wide Impact */}
+
+
       <Card className="mb-4 bg-success text-white">
         <Card.Header><h4> Our Collective Impact</h4></Card.Header>
         <Card.Body>
@@ -61,7 +61,7 @@ export default function CommunityStats() {
         </Card.Body>
       </Card>
 
-     
+
       {myStats && user && (
         <Card className="mb-4">
           <Card.Header><h5> Your Sustainability Journey</h5></Card.Header>
@@ -89,7 +89,7 @@ export default function CommunityStats() {
                     <Badge bg="secondary" pill>{myStats.co2SavedKg.toFixed(1)} kg</Badge>
                   </Col>
                 </Row>
-                
+
                 <div className="mt-3">
                   <p className="mb-1"><strong>Eco Score:</strong> {myStats.ecoScore}/100</p>
                   <ProgressBar
@@ -104,16 +104,16 @@ export default function CommunityStats() {
                   </small>
                 </div>
               </Col>
-              
+
               <Col md={6}>
                 <h6> Your Badges</h6>
                 {myStats.badges && myStats.badges.length > 0 ? (
                   <div className="d-flex flex-wrap gap-2">
                     {myStats.badges.map((badge, idx) => (
                       <Badge key={idx} bg="warning" text="dark" className="p-2">
-                        <span style={{fontSize: '1.5rem'}}>{badge.icon}</span>
-                        <div style={{fontSize: '0.8rem'}}><strong>{badge.name}</strong></div>
-                        <div style={{fontSize: '0.7rem'}}>{badge.description}</div>
+                        <span style={{ fontSize: '1.5rem' }}>{badge.icon}</span>
+                        <div style={{ fontSize: '0.8rem' }}><strong>{badge.name}</strong></div>
+                        <div style={{ fontSize: '0.7rem' }}>{badge.description}</div>
                       </Badge>
                     ))}
                   </div>
@@ -126,7 +126,7 @@ export default function CommunityStats() {
         </Card>
       )}
 
-     
+
       <Card>
         <Card.Header><h5> Top Eco Warriors This Month</h5></Card.Header>
         <Card.Body>
@@ -144,13 +144,10 @@ export default function CommunityStats() {
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboard.map((user, idx) => (
+                  {leaderboard.slice(0, 5).map((user, idx) => (
                     <tr key={idx} className={idx === 0 ? 'table-success' : ''}>
                       <td>
-                        {idx === 0 && '1'}
-                        {idx === 1 && '2'}
-                        {idx === 2 && '3'}
-                        {idx > 2 && `#${idx + 1}`}
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                       </td>
                       <td><strong>{user.user?.name || 'Anonymous'}</strong></td>
                       <td><Badge bg="success">{user.ecoScore}</Badge></td>
@@ -158,7 +155,7 @@ export default function CommunityStats() {
                       <td>{user.textileWasteSavedKg.toFixed(1)} kg</td>
                       <td>
                         {user.badges?.slice(0, 3).map((b, i) => (
-                          <span key={i} style={{fontSize: '1.2rem'}}>{b.icon} </span>
+                          <span key={i} style={{ fontSize: '1.2rem' }}>{b.icon} </span>
                         ))}
                         {user.badges?.length > 3 && `+${user.badges.length - 3}`}
                       </td>
@@ -173,7 +170,7 @@ export default function CommunityStats() {
         </Card.Body>
       </Card>
 
-      {/* Eco Tips */}
+    
       <Card className="mt-4 bg-light">
         <Card.Body>
           <h6> Sustainable Fashion Tips</h6>

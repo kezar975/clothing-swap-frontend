@@ -82,3 +82,12 @@ export const statsAPI = {
   updateStats: (userId, swapCompleted) => api.post('/stats/update', { userId, swapCompleted }),
   getLeaderboard: () => api.get('/stats/leaderboard')
 };
+
+export const adminAPI = {
+  getUsers: () => api.get('/admin/users'),
+  banUser: (id, isBanned) => api.patch(`/admin/users/${id}/ban`, { isBanned }),
+  getListings: () => api.get('/admin/listings'),
+  removeListing: (id) => api.delete(`/admin/listings/${id}`),
+  getSwaps: () => api.get('/admin/swaps'),
+  getAnalytics: () => api.get('/admin/analytics')
+};

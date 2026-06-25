@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom';
 import { clothingAPI } from '../services/api';
 import { Container, Row, Col, Card, Spinner, Form, Alert } from 'react-bootstrap';
 
-const API_BASE = 'https://clothing-swap-backend.onrender.com/api'; 
+const API_BASE = 'https://clothing-swap-backend.onrender.com/api';
 
 export default function Listings() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const [filter, setFilter] = useState({ 
-    type: '', 
-    condition: '', 
-    city: '', 
+
+  const [filter, setFilter] = useState({
+    type: '',
+    condition: '',
+    city: '',
     status: 'Available'
   });
   const [availableCities, setAvailableCities] = useState([]);
@@ -23,7 +23,7 @@ export default function Listings() {
       try {
         const res = await clothingAPI.getAll(filter);
         setItems(res.data.clothes || []);
-        
+
         const cities = [...new Set(res.data.clothes
           .map(item => item.location?.city)
           .filter(Boolean))];
@@ -42,24 +42,26 @@ export default function Listings() {
   };
 
   const getImageUrl = (imagePath) => {
-  if (!imagePath) return 'https://via.placeholder.com/300x200?text=No+Image';
-  if (imagePath.startsWith('http')) return imagePath;
-  return `https://clothing-swap-backend.onrender.com${imagePath}`; 
-};
+    if (!imagePath) return 'https://via.placeholder.com/300x200?text=No+Image';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `https://clothing-swap-backend.onrender.com${imagePath}`;
+  };
 
   return (
     <Container>
       <h3 className="mb-4">Browse Available Swaps</h3>
-      
+
       <Row className="mb-4 g-2">
         <Col md={3}>
           <Form.Select name="type" onChange={handleFilter} value={filter.type}>
             <option value="">All Types</option>
+            <option>T-Shirt</option>
             <option>Shirt</option>
             <option>Pants</option>
             <option>Jacket</option>
             <option>Dress</option>
             <option>Shoes</option>
+            <option>Other</option>
           </Form.Select>
         </Col>
         <Col md={3}>
@@ -109,16 +111,16 @@ export default function Listings() {
           {items.map(item => (
             <Col key={item._id}>
               <Card className="h-100 shadow-sm">
-                <div style={{ 
-                  height: '250px', 
+                <div style={{
+                  height: '250px',
                   overflow: 'hidden',
                   position: 'relative',
                   backgroundColor: '#f8f9fa'
                 }}>
-                  <Card.Img 
-                    variant="top" 
+                  <Card.Img
+                    variant="top"
                     src={getImageUrl(item.images?.[0])}
-                    style={{ 
+                    style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
@@ -146,8 +148,8 @@ export default function Listings() {
                     Value: ₹{item.estimatedValue}
                   </Card.Text>
                   <div className="mt-auto">
-                    <Link 
-                      to={`/item/${item._id}`} 
+                    <Link
+                      to={`/item/${item._id}`}
                       className="btn btn-primary w-100"
                     >
                       View Details

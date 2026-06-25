@@ -1,84 +1,205 @@
 import { useEffect, useState } from 'react';
-import { Container, Table, Badge, Button, Alert, Row, Col, Card } from 'react-bootstrap';
-import { clothingAPI, swapAPI } from '../services/api';
+import { Container, Table, Badge, Button, Alert, Row, Col, Card, Tabs, Tab } from 'react-bootstrap';
+import { adminAPI } from '../services/api';
 
 export default function AdminPanel() {
   const [listings, setListings] = useState([]);
   const [swaps, setSwaps] = useState([]);
-  const [msg, setMsg] = useState('');
+  const [users, setUsers] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [msg, setMsg] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchAll = async () => {
       try {
-        const [l, s] = await Promise.all([clothingAPI.getAll(), swapAPI.getAll()]);
-        setListings(l.data.clothes);
-        setSwaps(s.data);
-      } catch { setMsg('Failed to load data'); }
+        const [l, s, u, a] = await Promise.all([
+          adminAPI.getListings(),
+          adminAPI.getSwaps(),
+          adminAPI.getUsers(),
+          adminAPI.getAnalytics()
+        ]);
+        setListings(l.data.listings);
+        setSwaps(s.data.swaps);
+        setUsers(u.data.users);
+        setAnalytics(a.data);
+      } catch {
+        setMsg({ type: 'danger', text: 'Failed to load data' });
+      }
     };
-    fetch();
+    fetchAll();
   }, []);
 
-  const handleRemove = async (id) => {
+  const handleRemoveListing = async (id) => {
     if (!window.confirm('Remove this listing permanently?')) return;
     try {
-      await clothingAPI.delete(id);
+      await adminAPI.removeListing(id);
       setListings(prev => prev.filter(i => i._id !== id));
-      setMsg('Listing removed successfully');
-    } catch { setMsg('Failed to remove'); }
+      setMsg({ type: 'success', text: 'Listing removed successfully' });
+    } catch {
+      setMsg({ type: 'danger', text: 'Failed to remove listing' });
+    }
+  };
+
+  const handleBanUser = async (id, isBanned) => {
+    try {
+      await adminAPI.banUser(id, isBanned);
+      setUsers(prev => prev.map(u => u._id === id ? { ...u, isBanned } : u));
+      setMsg({ type: 'success', text: `User ${isBanned ? 'banned' : 'unbanned'} successfully` });
+    } catch {
+      setMsg({ type: 'danger', text: 'Failed to update user' });
+    }
   };
 
   return (
     <Container className="mt-4">
-      <h2 className="mb-4">Admin Dashboard</h2>
-      {msg && <Alert variant="success">{msg}</Alert>}
+      <h2 className="mb-4">🛡️ Admin Dashboard</h2>
+      
+      {msg.text && (
+        <Alert variant={msg.type} dismissible onClose={() => setMsg({ type: '', text: '' })}>
+          {msg.text}
+        </Alert>
+      )}
 
-      {/* Platform Stats */}
       <Row className="mb-4 g-3">
-        <Col md={3}><Card className="p-3 text-center"><h3>{listings.length}</h3><p>Total Listings</p></Card></Col>
-        <Col md={3}><Card className="p-3 text-center"><h3>{swaps.length}</h3><p>Total Swaps</p></Card></Col>
-        <Col md={3}><Card className="p-3 text-center"><h3>{swaps.filter(s => s.status === 'Completed').length}</h3><p>Completed</p></Card></Col>
-        <Col md={3}><Card className="p-3 text-center"><h3>{swaps.filter(s => s.status === 'Pending').length}</h3><p>Pending</p></Card></Col>
+        <Col md={2} sm={4}>
+          <Card className="p-3 text-center bg-primary text-white">
+            <h3>{analytics?.totalUsers || 0}</h3>
+            <p className="mb-0 small">Total Users</p>
+          </Card>
+        </Col>
+        <Col md={2} sm={4}>
+          <Card className="p-3 text-center bg-info text-white">
+            <h3>{analytics?.totalListings || 0}</h3>
+            <p className="mb-0 small">Total Listings</p>
+          </Card>
+        </Col>
+        <Col md={2} sm={4}>
+          <Card className="p-3 text-center bg-warning text-white">
+            <h3>{analytics?.totalSwaps || 0}</h3>
+            <p className="mb-0 small">Total Swaps</p>
+          </Card>
+        </Col>
+        <Col md={3} sm={6}>
+          <Card className="p-3 text-center bg-success text-white">
+            <h3>{analytics?.completedSwaps || 0}</h3>
+            <p className="mb-0 small">Completed</p>
+          </Card>
+        </Col>
+        <Col md={3} sm={6}>
+          <Card className="p-3 text-center bg-secondary text-white">
+            <h3>{analytics?.pendingSwaps || 0}</h3>
+            <p className="mb-0 small">Pending</p>
+          </Card>
+        </Col>
       </Row>
 
-      <h5 className="mb-3"> Active Listings</h5>
-      <Table striped bordered hover responsive>
-        <thead><tr><th>Title</th><th>Owner</th><th>City</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody>
-          {listings.map(i => (
-            <tr key={i._id}>
-              <td>{i.title}</td>
-              <td>{i.owner?.name || 'N/A'}</td>
-              <td>{i.location?.city || 'N/A'}</td>
-              <td><Badge bg={i.status === 'Available' ? 'success' : 'secondary'}>{i.status}</Badge></td>
-              <td><Button size="sm" variant="danger" onClick={() => handleRemove(i._id)}>Remove</Button></td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+      <Tabs defaultActiveKey="listings" className="mb-4">
+        
+        <Tab eventKey="listings" title="📦 Listings">
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>City</th>
+                <th>Value</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listings.map(i => (
+                <tr key={i._id}>
+                  <td>{i.title}</td>
+                  <td>{i.owner?.name || 'N/A'}<br/><small className="text-muted">{i.owner?.email}</small></td>
+                  <td>{i.location?.city || 'N/A'}</td>
+                  <td>₹{i.estimatedValue}</td>
+                  <td><Badge bg={i.status === 'Available' ? 'success' : 'secondary'}>{i.status}</Badge></td>
+                  <td>
+                    <Button size="sm" variant="danger" onClick={() => handleRemoveListing(i._id)}>
+                      🗑️ Remove
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Tab>
 
-      <h5 className="mt-4 mb-3">🔄Swap Activity</h5>
-      <Table striped bordered hover responsive>
-        <thead><tr><th>Items Exchanged</th><th>Users</th><th>Status</th><th>Date</th></tr></thead>
-        <tbody>
-          {swaps.map(s => (
-            <tr key={s._id}>
-              <td>{s.item1?.title} ↔ {s.item2?.title}</td>
-              <td>{s.sender?.name} ↔ {s.receiver?.name}</td>
-              <td><Badge bg={s.status === 'Completed' ? 'success' : s.status === 'Pending' ? 'warning' : 'info'}>{s.status}</Badge></td>
-              <td>{new Date(s.createdAt).toLocaleDateString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+        <Tab eventKey="users" title="👥 Users">
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>City</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u._id}>
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.location?.city || 'N/A'}</td>
+                  <td><Badge bg={u.role === 'admin' ? 'danger' : 'primary'}>{u.role}</Badge></td>
+                  <td>
+                    <Badge bg={u.isBanned ? 'danger' : 'success'}>
+                      {u.isBanned ? 'Banned' : 'Active'}
+                    </Badge>
+                  </td>
+                  <td>
+                    {u.role !== 'admin' && (
+                      <Button
+                        size="sm"
+                        variant={u.isBanned ? 'success' : 'warning'}
+                        onClick={() => handleBanUser(u._id, !u.isBanned)}
+                      >
+                        {u.isBanned ? '✅ Unban' : '🚫 Ban'}
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Tab>
 
-      <div className="mt-4 p-3 bg-light rounded">
-        <h6>Admin Notes (Phase 1)</h6>
-        <ul className="mb-0 small">
-          <li>Disputes resolve manually by checking chat logs in `/chat/:swapId`</li>
-          <li>"Remove" deletes listing from DB instantly</li>
-          <li>Analytics based on real-time swap/listing counts</li>
-        </ul>
-      </div>
+
+        <Tab eventKey="swaps" title="🔄 Swaps">
+          <Table striped bordered hover responsive>
+            <thead>
+              <tr>
+                <th>Items</th>
+                <th>Users</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {swaps.map(s => (
+                <tr key={s._id}>
+                  <td>{s.item1?.title} ↔ {s.item2?.title}</td>
+                  <td>{s.sender?.name} ↔ {s.receiver?.name}</td>
+                  <td>
+                    <Badge bg={
+                      s.status === 'Completed' ? 'success' :
+                      s.status === 'Pending' ? 'warning' :
+                      s.status === 'Accepted' ? 'info' : 'secondary'
+                    }>
+                      {s.status}
+                    </Badge>
+                  </td>
+                  <td>{new Date(s.createdAt).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Tab>
+
+      </Tabs>
     </Container>
   );
 }
