@@ -5,6 +5,7 @@ import { Container, Row, Col, Card, Button, Modal, Form, Alert, Badge } from 're
 import api from '../services/api';
 
 const API_BASE = 'https://clothing-swap-backend.onrender.com';
+const clothingTypes = ['T-Shirt', 'Shirt', 'Pants', 'Jacket', 'Dress', 'Shoes', 'Other'];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -24,8 +25,10 @@ export default function Dashboard() {
   const [errors, setErrors] = useState({});
 
   const fetchItems = async () => {
-    const res = await clothingAPI.getAll();
-    setItems(res.data.clothes.filter(i => i.owner?._id === user?._id));
+    try {
+      const res = await clothingAPI.getAll();
+      setItems(res.data.clothes.filter(i => i.owner?._id === user?._id));
+    } catch { }
   };
 
   useEffect(() => { fetchItems(); }, [user]);
@@ -38,29 +41,8 @@ export default function Dashboard() {
     if (!form.description.trim()) e.description = 'Description required';
     if (!form.city.trim()) e.city = 'City required';
     if (!isEdit && !imageFile) e.image = 'Image required';
-    if (isEdit && !editImageFile && !editItem?.images?.[0]) e.image = 'Image required';
     setErrors(e);
     return Object.keys(e).length === 0;
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleEditImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setEditImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setEditImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleAddSubmit = async (e) => {
@@ -73,7 +55,7 @@ export default function Dashboard() {
       await api.post('/clothes', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setMsg({ type: 'success', text: 'Item listed successfully!' });
+      setMsg({ type: 'success', text: 'Item listed!' });
       setShowAdd(false);
       setImageFile(null);
       setImagePreview(null);
@@ -96,15 +78,10 @@ export default function Dashboard() {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       } else {
-        await clothingAPI.update(editItem._id, {
-          ...form,
-          images: editItem.images
-        });
+        await clothingAPI.update(editItem._id, { ...form, images: editItem.images });
       }
       setMsg({ type: 'success', text: 'Item updated!' });
       setShowEdit(false);
-      setEditImageFile(null);
-      setEditImagePreview(null);
       setErrors({});
       fetchItems();
     } catch {
@@ -137,16 +114,14 @@ export default function Dashboard() {
     setShowEdit(true);
   };
 
-  const clothingTypes = ['T-Shirt', 'Shirt', 'Pants', 'Jacket', 'Dress', 'Shoes', 'Other'];
-
-  const ItemForm = ({ isEdit, onSubmit }) => (
-    <Form onSubmit={onSubmit}>
+  const renderFormFields = (isEdit) => (
+    <>
       <Form.Group className="mb-2">
         <Form.Label>Title *</Form.Label>
         <Form.Control
           placeholder="e.g. Blue Denim Jacket"
           value={form.title}
-          onChange={e => setForm({ ...form, title: e.target.value })}
+          onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
           isInvalid={!!errors.title}
         />
         <Form.Control.Feedback type="invalid">{errors.title}</Form.Control.Feedback>
@@ -154,7 +129,7 @@ export default function Dashboard() {
 
       <Form.Group className="mb-2">
         <Form.Label>Type *</Form.Label>
-        <Form.Select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+        <Form.Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
           {clothingTypes.map(t => <option key={t}>{t}</option>)}
         </Form.Select>
       </Form.Group>
@@ -163,7 +138,11 @@ export default function Dashboard() {
         <Col>
           <Form.Group>
             <Form.Label>Brand</Form.Label>
-            <Form.Control placeholder="Nike, Zara..." value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} />
+            <Form.Control
+              placeholder="Nike, Zara..."
+              value={form.brand}
+              onChange={e => setForm(f => ({ ...f, brand: e.target.value }))}
+            />
           </Form.Group>
         </Col>
         <Col>
@@ -172,7 +151,7 @@ export default function Dashboard() {
             <Form.Control
               placeholder="S, M, L, XL..."
               value={form.size}
-              onChange={e => setForm({ ...form, size: e.target.value })}
+              onChange={e => setForm(f => ({ ...f, size: e.target.value }))}
               isInvalid={!!errors.size}
             />
             <Form.Control.Feedback type="invalid">{errors.size}</Form.Control.Feedback>
@@ -184,8 +163,11 @@ export default function Dashboard() {
         <Col>
           <Form.Group>
             <Form.Label>Condition *</Form.Label>
-            <Form.Select value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })}>
-              <option>New</option><option>Like New</option><option>Good</option><option>Fair</option>
+            <Form.Select value={form.condition} onChange={e => setForm(f => ({ ...f, condition: e.target.value }))}>
+              <option>New</option>
+              <option>Like New</option>
+              <option>Good</option>
+              <option>Fair</option>
             </Form.Select>
           </Form.Group>
         </Col>
@@ -196,7 +178,7 @@ export default function Dashboard() {
               type="number"
               placeholder="500"
               value={form.estimatedValue}
-              onChange={e => setForm({ ...form, estimatedValue: e.target.value })}
+              onChange={e => setForm(f => ({ ...f, estimatedValue: e.target.value }))}
               isInvalid={!!errors.estimatedValue}
             />
             <Form.Control.Feedback type="invalid">{errors.estimatedValue}</Form.Control.Feedback>
@@ -209,9 +191,9 @@ export default function Dashboard() {
         <Form.Control
           as="textarea"
           rows={3}
-          placeholder="Describe your item — brand story, fabric, why you're swapping..."
+          placeholder="Describe your item — fabric, condition details, why swapping..."
           value={form.description}
-          onChange={e => setForm({ ...form, description: e.target.value })}
+          onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
           isInvalid={!!errors.description}
         />
         <Form.Control.Feedback type="invalid">{errors.description}</Form.Control.Feedback>
@@ -222,14 +204,14 @@ export default function Dashboard() {
         <Form.Control
           placeholder="Mumbai, Delhi..."
           value={form.city}
-          onChange={e => setForm({ ...form, city: e.target.value })}
+          onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
           isInvalid={!!errors.city}
         />
         <Form.Control.Feedback type="invalid">{errors.city}</Form.Control.Feedback>
       </Form.Group>
 
       <Form.Group className="mb-3">
-        <Form.Label>Image * {isEdit && '(Upload new to change)'}</Form.Label>
+        <Form.Label>Image * {isEdit && '(Upload new to replace)'}</Form.Label>
         {isEdit && editItem?.images?.[0] && !editImagePreview && (
           <div className="mb-2">
             <img
@@ -237,13 +219,32 @@ export default function Dashboard() {
               alt="Current"
               style={{ height: '100px', objectFit: 'cover', borderRadius: '8px' }}
             />
-            <small className="d-block text-muted">Current image</small>
+            <small className="d-block text-muted mt-1">Current image</small>
           </div>
         )}
         <Form.Control
           type="file"
           accept="image/*"
-          onChange={isEdit ? handleEditImageChange : handleImageChange}
+          onChange={isEdit
+            ? (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setEditImageFile(file);
+                const reader = new FileReader();
+                reader.onloadend = () => setEditImagePreview(reader.result);
+                reader.readAsDataURL(file);
+              }
+            }
+            : (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setImageFile(file);
+                const reader = new FileReader();
+                reader.onloadend = () => setImagePreview(reader.result);
+                reader.readAsDataURL(file);
+              }
+            }
+          }
           isInvalid={!!errors.image}
         />
         <Form.Control.Feedback type="invalid">{errors.image}</Form.Control.Feedback>
@@ -253,16 +254,12 @@ export default function Dashboard() {
           <img
             src={isEdit ? editImagePreview : imagePreview}
             alt="Preview"
-            className="mt-2"
+            className="mt-2 d-block"
             style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }}
           />
         )}
       </Form.Group>
-
-      <Button type="submit" className="w-100">
-        {isEdit ? 'Save Changes' : 'Publish Listing'}
-      </Button>
-    </Form>
+    </>
   );
 
   return (
@@ -271,9 +268,7 @@ export default function Dashboard() {
         <h2>Welcome, {user?.name} 👋</h2>
         <Button onClick={() => {
           setForm({ title: '', type: 'T-Shirt', brand: '', size: '', condition: 'Good', estimatedValue: '', description: '', city: '' });
-          setImageFile(null);
-          setImagePreview(null);
-          setErrors({});
+          setImageFile(null); setImagePreview(null); setErrors({});
           setShowAdd(true);
         }}>+ Add New Item</Button>
       </div>
@@ -292,10 +287,8 @@ export default function Dashboard() {
               />
               <Card.Body>
                 <Card.Title>{item.title}</Card.Title>
-                <Card.Text>
-                  <Badge bg={item.status === 'Available' ? 'success' : 'secondary'}>{item.status}</Badge>
-                </Card.Text>
-                <div className="d-flex gap-2">
+                <Badge bg={item.status === 'Available' ? 'success' : 'secondary'}>{item.status}</Badge>
+                <div className="d-flex gap-2 mt-2">
                   <Button size="sm" variant="outline-primary" onClick={() => openEdit(item)}>Edit</Button>
                   <Button size="sm" variant="outline-danger" onClick={() => handleDelete(item._id)}>Delete</Button>
                 </div>
@@ -305,16 +298,27 @@ export default function Dashboard() {
         ))}
       </Row>
 
-      {items.length === 0 && <p className="text-center mt-4 text-muted">No items listed yet. Start swapping!</p>}
+      {items.length === 0 && <p className="text-center mt-4 text-muted">No items yet. Add your first item!</p>}
 
       <Modal show={showAdd} onHide={() => setShowAdd(false)} size="lg">
         <Modal.Header closeButton><Modal.Title>List New Item</Modal.Title></Modal.Header>
-        <Modal.Body><ItemForm isEdit={false} onSubmit={handleAddSubmit} /></Modal.Body>
+        <Modal.Body>
+          <Form onSubmit={handleAddSubmit}>
+            {renderFormFields(false)}
+            <Button type="submit" className="w-100">Publish Listing</Button>
+          </Form>
+        </Modal.Body>
       </Modal>
 
+      
       <Modal show={showEdit} onHide={() => setShowEdit(false)} size="lg">
         <Modal.Header closeButton><Modal.Title>Edit Item</Modal.Title></Modal.Header>
-        <Modal.Body><ItemForm isEdit={true} onSubmit={handleEditSubmit} /></Modal.Body>
+        <Modal.Body>
+          <Form onSubmit={handleEditSubmit}>
+            {renderFormFields(true)}
+            <Button type="submit" className="w-100">Save Changes</Button>
+          </Form>
+        </Modal.Body>
       </Modal>
     </Container>
   );
