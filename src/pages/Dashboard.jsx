@@ -283,7 +283,7 @@ export default function Dashboard() {
                 variant="top"
                 src={item.images?.[0]?.startsWith('http') ? item.images[0] : `${API_BASE}${item.images[0]}`}
                 style={{ height: '150px', objectFit: 'cover' }}
-                onError={e => { e.target.src = 'https://via.placeholder.com/300x150?text=No+Image'; }}
+                onError={e => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200"%3E%3Crect fill="%23f8f9fa" width="300" height="200"/%3E%3Ctext fill="%236c757d" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E'; }}
               />
               <Card.Body>
                 <Card.Title>{item.title}</Card.Title>

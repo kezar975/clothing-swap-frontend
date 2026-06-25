@@ -42,7 +42,7 @@ export default function Listings() {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) return 'https://via.placeholder.com/300x200?text=No+Image';
+    if (!imagePath) return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200"%3E%3Crect fill="%23f8f9fa" width="300" height="200"/%3E%3Ctext fill="%236c757d" font-family="Arial" font-size="16" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
     if (imagePath.startsWith('http')) return imagePath;
     return `https://clothing-swap-backend.onrender.com${imagePath}`;
   };
