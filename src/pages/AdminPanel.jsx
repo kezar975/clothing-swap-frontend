@@ -29,16 +29,16 @@ export default function AdminPanel() {
     fetchAll();
   }, []);
 
-  const handleRemoveListing = async (id) => {
-    if (!window.confirm('Remove this listing permanently?')) return;
-    try {
-      await adminAPI.removeListing(id);
-      setListings(prev => prev.filter(i => i._id !== id));
-      setMsg({ type: 'success', text: 'Listing removed successfully' });
-    } catch {
-      setMsg({ type: 'danger', text: 'Failed to remove listing' });
-    }
-  };
+  const handleRoleChange = async (id, newRole) => {
+  if (!window.confirm(`Change this user's role to ${newRole}?`)) return;
+  try {
+    await adminAPI.updateRole(id, newRole);
+    setUsers(prev => prev.map(u => u._id === id ? { ...u, role: newRole } : u));
+    setMsg({ type: 'success', text: `User role updated to ${newRole}` });
+  } catch {
+    setMsg({ type: 'danger', text: 'Failed to update role' });
+  }
+};
 
   const handleBanUser = async (id, isBanned) => {
     try {
@@ -127,45 +127,65 @@ export default function AdminPanel() {
         </Tab>
 
         <Tab eventKey="users" title="👥 Users">
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>City</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u._id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.location?.city || 'N/A'}</td>
-                  <td><Badge bg={u.role === 'admin' ? 'danger' : 'primary'}>{u.role}</Badge></td>
-                  <td>
-                    <Badge bg={u.isBanned ? 'danger' : 'success'}>
-                      {u.isBanned ? 'Banned' : 'Active'}
-                    </Badge>
-                  </td>
-                  <td>
-                    {u.role !== 'admin' && (
-                      <Button
-                        size="sm"
-                        variant={u.isBanned ? 'success' : 'warning'}
-                        onClick={() => handleBanUser(u._id, !u.isBanned)}
-                      >
-                        {u.isBanned ? '✅ Unban' : '🚫 Ban'}
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Tab>
+  <Table striped bordered hover responsive>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>City</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map(u => (
+        <tr key={u._id}>
+          <td>{u.name}</td>
+          <td>{u.email}</td>
+          <td>{u.location?.city || 'N/A'}</td>
+          <td><Badge bg={u.role === 'admin' ? 'danger' : 'primary'}>{u.role}</Badge></td>
+          <td>
+            <Badge bg={u.isBanned ? 'danger' : 'success'}>
+              {u.isBanned ? 'Banned' : 'Active'}
+            </Badge>
+          </td>
+          <td>
+            <div className="d-flex gap-2 flex-wrap">
+              {u.role !== 'admin' && (
+                <Button
+                  size="sm"
+                  variant={u.isBanned ? 'success' : 'warning'}
+                  onClick={() => handleBanUser(u._id, !u.isBanned)}
+                >
+                  {u.isBanned ? '✅ Unban' : '🚫 Ban'}
+                </Button>
+              )}
+              
+              {u.role === 'admin' ? (
+                <Button
+                  size="sm"
+                  variant="outline-secondary"
+                  onClick={() => handleRoleChange(u._id, 'user')}
+                >
+                  ⬇️ Remove Admin
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline-danger"
+                  onClick={() => handleRoleChange(u._id, 'admin')}
+                >
+                  🛡️ Make Admin
+                </Button>
+              )}
+            </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </Table>
+</Tab>
 
 
         <Tab eventKey="swaps" title="🔄 Swaps">

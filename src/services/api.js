@@ -86,6 +86,7 @@ export const statsAPI = {
 export const adminAPI = {
   getUsers: () => api.get('/admin/users'),
   banUser: (id, isBanned) => api.patch(`/admin/users/${id}/ban`, { isBanned }),
+  updateRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
   getListings: () => api.get('/admin/listings'),
   removeListing: (id) => api.delete(`/admin/listings/${id}`),
   getSwaps: () => api.get('/admin/swaps'),
